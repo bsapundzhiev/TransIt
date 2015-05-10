@@ -15,10 +15,9 @@ var currentTab = null;
 var updateOpenTab = function(url) {
 
     if (currentTab) {
-            currentTab.url = url;
-            currentTab.reload();
-            //currentTab.activate();
-            return;
+        currentTab.url = url;
+        currentTab.reload();
+        return;
     }
 
     tabs.open({
@@ -26,7 +25,6 @@ var updateOpenTab = function(url) {
         isPinned: false,
         onOpen: function onOpen(tab) {
             currentTab = tab;
-            //tab.activate();
         },
         onClose: function onClose(tab) {
             currentTab = null;
@@ -60,7 +58,7 @@ selection.on('select', function() {
 
 var panelTransIt = require("sdk/panel").Panel({
     width: 240,
-    height: 220,
+    height: 130,
     contentURL: data.url("options.html"),
     contentScriptFile: [
         data.url("languages.js"),
