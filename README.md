@@ -1,2 +1,4 @@
 # TransIt
-Chrome/Firefox translation automation add-on
+Google translate automation add-on for Chrome and Firefox browsers
+
+![Image](TrExt.png)

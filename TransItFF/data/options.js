@@ -53,7 +53,8 @@
 
     function init() {
         restoreOptions();
-        document.getElementById("savebtn").addEventListener('click', saveOptions, false);
+        document.getElementById("srcLang").addEventListener("change", saveOptions, false);
+        document.getElementById("trgLang").addEventListener("change", saveOptions, false);
         console.log("Options loaded...");
     }
 

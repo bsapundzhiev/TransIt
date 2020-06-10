@@ -28,30 +28,27 @@ TransIt.Options.storeRestore = function(ComboId, StoreId) {
 
 TransIt.Options.populateLang = function(ComboId) {
 
-	var combo = document.getElementById(ComboId);
-	for(var k in TransIt.languages) {
-		var v = TransIt.languages[k];
-		combo.add( new Option (k, v), null );
-	}
+  var combo = document.getElementById(ComboId);
+  for(var k in TransIt.languages) {
+    var v = TransIt.languages[k];
+    combo.add( new Option (k, v), null );
+  }
 }
 
 TransIt.Options.saveOptions = function() {
-	TransIt.Options.storeSave("srcLang", "Transit.srcLang");
-	TransIt.Options.storeSave("trgLang", "Transit.trgLang");
-	
-	//localStorage["Transit.ShowIcon"] = document.getElementById("showToolBarIco").checked;
+  TransIt.Options.storeSave("srcLang", "Transit.srcLang");
+  TransIt.Options.storeSave("trgLang", "Transit.trgLang");
 }
 
 TransIt.Options.restoreOptions = function() {
-	 TransIt.Options.populateLang("srcLang");
-	 TransIt.Options.populateLang("trgLang");
-	 TransIt.Options.storeRestore("srcLang", "Transit.srcLang");
-	 TransIt.Options.storeRestore("trgLang", "Transit.trgLang");
-	 
-	 //document.getElementById("showToolBarIco").checked = (localStorage["Transit.ShowIcon"] === 'true');
+   TransIt.Options.populateLang("srcLang");
+   TransIt.Options.populateLang("trgLang");
+   TransIt.Options.storeRestore("srcLang", "Transit.srcLang");
+   TransIt.Options.storeRestore("trgLang", "Transit.trgLang");
 }
 
 document.addEventListener('DOMContentLoaded', function() {
-	TransIt.Options.restoreOptions();
-	document.getElementById("savebtn").addEventListener('click',  TransIt.Options.saveOptions , false);
+  TransIt.Options.restoreOptions();
+  document.getElementById("srcLang").addEventListener("change", TransIt.Options.saveOptions , false);
+  document.getElementById("trgLang").addEventListener("change", TransIt.Options.saveOptions , false);
 });
