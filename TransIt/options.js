@@ -35,9 +35,17 @@ TransIt.Options.populateLang = function(ComboId) {
   }
 }
 
+TransIt.Options.notify = function() {
+  chrome.runtime.sendMessage("", {
+    "srcLang": localStorage["Transit.srcLang"],
+    "trgLang": localStorage["Transit.trgLang"]
+  });
+}
+
 TransIt.Options.saveOptions = function() {
   TransIt.Options.storeSave("srcLang", "Transit.srcLang");
   TransIt.Options.storeSave("trgLang", "Transit.trgLang");
+  TransIt.Options.notify();
 }
 
 TransIt.Options.restoreOptions = function() {

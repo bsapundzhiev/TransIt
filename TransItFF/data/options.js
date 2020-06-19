@@ -44,10 +44,10 @@
     }
 
     var restoreOptions = function() {
-         populateLang("srcLang");
-         populateLang("trgLang");
-         storeRestore("srcLang", "Transit.srcLang");
-         storeRestore("trgLang", "Transit.trgLang");
+        populateLang("srcLang");
+        populateLang("trgLang");
+        storeRestore("srcLang", "Transit.srcLang");
+        storeRestore("trgLang", "Transit.trgLang");
         notify();
     }
 

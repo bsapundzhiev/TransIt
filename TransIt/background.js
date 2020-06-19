@@ -2,101 +2,155 @@
 //Author:(C) 2012 Borislav Sapundzhiev
 //License: This file is released under the terms of GPL v2.
 
-function TabTrView() {
+function TabTrView(opts) {
 
-	this.menuid = 0;
-	this.tabid = 0;
+    this.menuid = 0;
+    this.tabsInfo = {};
+    this.opts = opts;
 }
 
-TabTrView.prototype.createContextMenu = function ( onclickEv ) {
+TabTrView.prototype.createContextMenu = function (onclickEv) {
 
-	this.menuid = chrome.contextMenus.create({
-		"title": "Translate '%s'", 
-		"contexts": ["selection"],
-		"onclick": onclickEv
-	});
+    var title = this.opts.getMenuTitle();
+
+    this.menuid = chrome.contextMenus.create({
+        "title": title, 
+        "contexts": ["selection"],
+        "onclick": onclickEv
+    });
 }
 
 TabTrView.prototype.addRemoveTabListener = function (removeEv) {
 
-	chrome.tabs.onRemoved.addListener(removeEv);
+    chrome.tabs.onRemoved.addListener(removeEv);
 }
 
-TabTrView.prototype.addTabId = function (TabId) {
-	
-	this.tabid = TabId;
+TabTrView.prototype.addOnMessageListener = function(notifyEv) {
+
+    chrome.runtime.onMessage.addListener(notifyEv);
 }
 
-TabTrView.prototype.remTabId = function (TabId) {
-	
-	if(TabId == this.tabid) {
-		this.tabid = 0;
-	}
+TabTrView.prototype.settingChanged = function(message) {
+
+    if (this.menuid) {
+        var title = this.opts.getMenuTitle();
+        chrome.contextMenus.update(this.menuid, {"title": title});
+    }
 }
 
-TabTrView.prototype.createTab = function (url , createEv) { 
-
-	if(this.tabid == 0) {
-		chrome.tabs.create( {"url": url }, createEv );
-	} else {
-		chrome.tabs.update( this.tabid, {"active": true, "url": url } );
-	}
+TabTrView.prototype.addTabId = function (Tab) {
+    
+    this.tabsInfo[Tab.windowId] = Tab.id;  
 }
 
-function TabTrCtrl(view, opts) {
+TabTrView.prototype.remTabId = function (TabId, removeInfo) {
+    
+    if (this.tabsInfo[removeInfo.windowId] == TabId) {
+        delete this.tabsInfo[removeInfo.windowId];
+    }
+}
 
-	this.view_ = view; 
-	this.opts = opts;	
+TabTrView.prototype.createTab = function (textToTranslate, createEv, fromTab) {
+
+    var tabId = this.tabsInfo[fromTab.windowId];
+    var url = this.opts.trFormatURL(textToTranslate);
+
+    if(!tabId) {
+        chrome.tabs.create( {"url": url }, createEv );
+    } else {
+        chrome.tabs.update( tabId, {"active": true, "url": url } );
+    }
+}
+
+function TabTrCtrl(view) {
+
+    this.view_ = view;  
 }
 
 TabTrCtrl.prototype.trInitListeners = function() {
 
-	this.view_.createContextMenu(this.trMenuEv.bind(this));	
-	this.view_.addRemoveTabListener(this.trTabRemEv.bind(this));
+    this.view_.createContextMenu(this.trMenuEv.bind(this)); 
+    this.view_.addRemoveTabListener(this.trTabRemEv.bind(this));
+    this.view_.addOnMessageListener(this.trMessageEv.bind(this));
 }
 
 TabTrCtrl.prototype.trTabAddEv = function(Tab) {
-
-	this.view_.addTabId(Tab.id);
+    
+    this.view_.addTabId(Tab);
 }
 
-TabTrCtrl.prototype.trTabRemEv = function(Tab) {
+TabTrCtrl.prototype.trTabRemEv = function(TabId, removeInfo) {
 
-	this.view_.remTabId(Tab);
+    this.view_.remTabId(TabId, removeInfo);
 }
 
-TabTrCtrl.prototype.trFormatURL = function(Text) {
+TabTrCtrl.prototype.trMessageEv = function(message) {
 
-	if( localStorage["Transit.srcLang"] ) {
-		this.opts.srcLang = localStorage["Transit.srcLang"];
-	}
-	if( localStorage["Transit.trgLang"] ) {
-		this.opts.trgLang = localStorage["Transit.trgLang"];
-	}
-	
-	return this.opts.url + "#" + this.opts.srcLang +"|"+ this.opts.trgLang +"|" + encodeURI(Text);
+    this.view_.settingChanged(message);
 }
 
-TabTrCtrl.prototype.trMenuEv = function(OnClickData) {
-	
-	var text = OnClickData.selectionText ? OnClickData.selectionText : "No selected text";
-	
-	this.view_.createTab(this.trFormatURL(text), this.trTabAddEv.bind(this)); 
+TabTrCtrl.prototype.trMenuEv = function(OnClickData, Tab) {
+    
+    var textToTranslate = OnClickData.selectionText || "No selected text";
+
+    this.view_.createTab(textToTranslate, this.trTabAddEv.bind(this), Tab); 
 }
-								   
+
+function TrSettings(opts) {
+    this.opts = opts;
+}
+
+TrSettings.prototype.getSrcLang = function() {
+            
+    return localStorage[this.opts.srcLangKey] || this.opts.srcLang;
+}
+
+TrSettings.prototype.getTrgLang = function() {
+
+    return localStorage[this.opts.trgLangKey] || this.opts.trgLang;
+}
+
+TrSettings.prototype.trFormatURL = function(text) {
+
+    const urlEelements = [
+        this.opts.url, this.opts.separators[0], 
+        this.getSrcLang(), this.opts.separators[1],
+        this.getTrgLang(), this.opts.separators[1], 
+        window.encodeURI(text)
+    ];
+    return urlEelements.join('');
+}
+
+TrSettings.prototype.getMenuTitle = function() {
+
+    const menuTitleElements = [
+        this.opts.separators[2], this.getSrcLang(), 
+        this.opts.separators[1], this.getTrgLang(),  
+        this.opts.separators[3], this.opts.menuTitle
+    ];
+    return menuTitleElements.join('');
+}
+
 document.addEventListener('DOMContentLoaded', function () {
-	
-	try {
-		var trView = new TabTrView();
-		var trCtr = new TabTrCtrl(trView, {
-			"url": "http://translate.google.com/",
-			"srcLang": "auto", 
-			"trgLang": "en"
-		});
-		
-		trCtr.trInitListeners();
-		
-	}catch (e) {
-		alert(e);
-	}
+
+    try {
+
+        var trSettings = new TrSettings({
+            url: "http://translate.google.com/",
+            srcLang: "auto", 
+            trgLang: "en",
+            srcLangKey: "Transit.srcLang",
+            trgLangKey: "Transit.trgLang",
+            separators: ["#","|","[","]"],
+            menuTitle: " Translate '%s'",
+        });
+
+        var trView = new TabTrView(trSettings);
+        var trCtr = new TabTrCtrl(trView);
+        
+        trCtr.trInitListeners();
+        
+    } catch (e) {
+        alert("Transit error: " + e);
+    }
 });
