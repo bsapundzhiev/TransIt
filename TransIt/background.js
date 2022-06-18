@@ -7,17 +7,24 @@ function TabTrView(opts) {
     this.menuid = 0;
     this.tabsInfo = {};
     this.opts = opts;
+    this.opts.load(this.settingChanged.bind(this));
 }
 
 TabTrView.prototype.createContextMenu = function (onclickEv) {
 
     var title = this.opts.getMenuTitle();
-
+    console.log("createContextMenu: ", this.menuid);
+    if (!this.menuid) {
+       chrome.contextMenus.removeAll();
+    }
+    
     this.menuid = chrome.contextMenus.create({
+        "id": "transit-tr-command",
         "title": title, 
-        "contexts": ["selection"],
-        "onclick": onclickEv
+        "contexts": ["selection"]
     });
+    
+    chrome.contextMenus.onClicked.addListener(onclickEv);
 }
 
 TabTrView.prototype.addRemoveTabListener = function (removeEv) {
@@ -31,7 +38,8 @@ TabTrView.prototype.addOnMessageListener = function(notifyEv) {
 }
 
 TabTrView.prototype.settingChanged = function(message) {
-
+    console.log("onMessage: ", message);
+    this.opts.setSettings(message);
     if (this.menuid) {
         var title = this.opts.getMenuTitle();
         chrome.contextMenus.update(this.menuid, {"title": title});
@@ -84,39 +92,42 @@ TabTrCtrl.prototype.trTabRemEv = function(TabId, removeInfo) {
     this.view_.remTabId(TabId, removeInfo);
 }
 
-TabTrCtrl.prototype.trMessageEv = function(message) {
+TabTrCtrl.prototype.trMessageEv = function(message, sender, sendResponse) {
 
     this.view_.settingChanged(message);
+    sendResponse({});
 }
 
 TabTrCtrl.prototype.trMenuEv = function(OnClickData, Tab) {
     
-    var textToTranslate = OnClickData.selectionText || "No selected text";
+    var textToTranslate = OnClickData.selectionText;
 
     this.view_.createTab(textToTranslate, this.trTabAddEv.bind(this), Tab); 
 }
 
 function TrSettings(opts) {
     this.opts = opts;
+    this.opts.settings = {};
+}
+
+TrSettings.prototype.setSettings = function(settings) {
+   if (settings) {
+      this.opts.settings = settings;   
+   }
 }
 
 TrSettings.prototype.getSrcLang = function() {
-            
-    return localStorage[this.opts.srcLangKey] || this.opts.srcLang;
+    return this.opts.settings.srcLang || this.opts.srcLang;
 }
 
 TrSettings.prototype.getTrgLang = function() {
-
-    return localStorage[this.opts.trgLangKey] || this.opts.trgLang;
+    return  this.opts.settings.trgLang || this.opts.trgLang;
 }
 
 TrSettings.prototype.trFormatURL = function(text) {
 
     const urlEelements = [
-        this.opts.url, this.opts.separators[0], 
-        this.getSrcLang(), this.opts.separators[1],
-        this.getTrgLang(), this.opts.separators[1], 
-        window.encodeURI(text)
+        this.opts.url, "#", this.getSrcLang(), "|", this.getTrgLang(), "|", encodeURI(text)
     ];
     return urlEelements.join('');
 }
@@ -124,33 +135,33 @@ TrSettings.prototype.trFormatURL = function(text) {
 TrSettings.prototype.getMenuTitle = function() {
 
     const menuTitleElements = [
-        this.opts.separators[2], this.getSrcLang(), 
-        this.opts.separators[1], this.getTrgLang(),  
-        this.opts.separators[3], this.opts.menuTitle
+        "[", this.getSrcLang(), "|", this.getTrgLang(), "]", this.opts.menuTitle
     ];
     return menuTitleElements.join('');
 }
 
-document.addEventListener('DOMContentLoaded', function () {
+TrSettings.prototype.load = function(callback)
+{
+   if(callback) {
+      var srcPromise = TransIt.localStore.get("Transit.srcLang", "auto");
+      var trgPromise = TransIt.localStore.get("Transit.trgLang", "en");
+      Promise.all([srcPromise, trgPromise]).then( values => { 
+          callback({srcLang: values[0], trgLang: values[1]});
+      });
+   }
+}
 
-    try {
+importScripts("localstore.js");
 
-        var trSettings = new TrSettings({
-            url: "http://translate.google.com/",
-            srcLang: "auto", 
-            trgLang: "en",
-            srcLangKey: "Transit.srcLang",
-            trgLangKey: "Transit.trgLang",
-            separators: ["#","|","[","]"],
-            menuTitle: " Translate '%s'",
-        });
+(function() {
+    console.log("Init TransIt");
+    var trSettings = new TrSettings({
+       url: "http://translate.google.com/",
+       menuTitle: " Translate: '%s'",
+    });
 
-        var trView = new TabTrView(trSettings);
-        var trCtr = new TabTrCtrl(trView);
-        
-        trCtr.trInitListeners();
-        
-    } catch (e) {
-        alert("Transit error: " + e);
-    }
-});
+    var trView = new TabTrView(trSettings);
+    var trCtr = new TabTrCtrl(trView);
+
+    trCtr.trInitListeners();
+})();

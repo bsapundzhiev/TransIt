@@ -8,11 +8,11 @@ TransIt.Options = {};
 TransIt.Options.storeSave = function (ComboId, StoreId) {
   var select = document.getElementById(ComboId);
   var srcLang = select.children[select.selectedIndex].value;
-  localStorage[StoreId] = srcLang;
+  TransIt.localStore.set(StoreId, srcLang);
 }
 
-TransIt.Options.storeRestore = function(ComboId, StoreId) {
-  var favorite = localStorage[StoreId];
+TransIt.Options.storeRestore = async function(ComboId, StoreId) {
+  var favorite = await TransIt.localStore.get(StoreId);
   if (!favorite) {
     return;
   }
@@ -26,19 +26,19 @@ TransIt.Options.storeRestore = function(ComboId, StoreId) {
   }
 }
 
-TransIt.Options.populateLang = function(ComboId) {
-
+TransIt.Options.populateLang = function(ComboId, StoreId) {
   var combo = document.getElementById(ComboId);
   for(var k in TransIt.languages) {
     var v = TransIt.languages[k];
     combo.add( new Option (k, v), null );
   }
+  TransIt.Options.storeRestore(ComboId, StoreId);
 }
 
-TransIt.Options.notify = function() {
-  chrome.runtime.sendMessage("", {
-    "srcLang": localStorage["Transit.srcLang"],
-    "trgLang": localStorage["Transit.trgLang"]
+TransIt.Options.notify = async function() {
+  chrome.runtime.sendMessage({
+    "srcLang": await TransIt.localStore.get("Transit.srcLang"),
+    "trgLang": await TransIt.localStore.get("Transit.trgLang")
   });
 }
 
@@ -49,10 +49,8 @@ TransIt.Options.saveOptions = function() {
 }
 
 TransIt.Options.restoreOptions = function() {
-   TransIt.Options.populateLang("srcLang");
-   TransIt.Options.populateLang("trgLang");
-   TransIt.Options.storeRestore("srcLang", "Transit.srcLang");
-   TransIt.Options.storeRestore("trgLang", "Transit.trgLang");
+   TransIt.Options.populateLang("srcLang", "Transit.srcLang");
+   TransIt.Options.populateLang("trgLang", "Transit.trgLang");
 }
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -60,3 +58,4 @@ document.addEventListener('DOMContentLoaded', function() {
   document.getElementById("srcLang").addEventListener("change", TransIt.Options.saveOptions , false);
   document.getElementById("trgLang").addEventListener("change", TransIt.Options.saveOptions , false);
 });
+
