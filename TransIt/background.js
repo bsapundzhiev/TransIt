@@ -13,9 +13,10 @@ function TabTrView(opts) {
 TabTrView.prototype.createContextMenu = function (onclickEv) {
 
     var title = this.opts.getMenuTitle();
-    console.log("createContextMenu: ", this.menuid);
+    
     if (!this.menuid) {
-       chrome.contextMenus.removeAll();
+        console.log("createContextMenu: ", this.menuid);
+        chrome.contextMenus.removeAll();
     }
     
     this.menuid = chrome.contextMenus.create({
@@ -38,7 +39,7 @@ TabTrView.prototype.addOnMessageListener = function(notifyEv) {
 }
 
 TabTrView.prototype.settingChanged = function(message) {
-    console.log("onMessage: ", message);
+
     this.opts.setSettings(message);
     if (this.menuid) {
         var title = this.opts.getMenuTitle();
@@ -126,8 +127,9 @@ TrSettings.prototype.getTrgLang = function() {
 
 TrSettings.prototype.trFormatURL = function(text) {
 
+    var encodedText = encodeURIComponent(text);
     const urlEelements = [
-        this.opts.url, "#", this.getSrcLang(), "|", this.getTrgLang(), "|", encodeURI(text)
+        this.opts.url, "#", this.getSrcLang(), "|", this.getTrgLang(), "|", encodeURI(encodedText)
     ];
     return urlEelements.join('');
 }
@@ -146,7 +148,7 @@ TrSettings.prototype.load = function(callback)
       var srcPromise = TransIt.localStore.get("Transit.srcLang", "auto");
       var trgPromise = TransIt.localStore.get("Transit.trgLang", "en");
       Promise.all([srcPromise, trgPromise]).then( values => { 
-          callback({srcLang: values[0], trgLang: values[1]});
+        callback({srcLang: values[0], trgLang: values[1]});
       });
    }
 }
