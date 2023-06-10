@@ -137,7 +137,7 @@ TrSettings.prototype.trFormatURL = function(text) {
 TrSettings.prototype.getMenuTitle = function() {
 
     const menuTitleElements = [
-        "[", this.getSrcLang(), "|", this.getTrgLang(), "]", this.opts.menuTitle
+        "[", this.getSrcLang(), ">", this.getTrgLang(), "]", this.opts.menuTitle
     ];
     return menuTitleElements.join('');
 }
@@ -156,9 +156,9 @@ TrSettings.prototype.load = function(callback)
 importScripts("localstore.js");
 
 (function() {
-    console.log("Init TransIt");
+    console.log("Init TransIt...");
     var trSettings = new TrSettings({
-       url: "http://translate.google.com/",
+       url: "https://translate.google.com/",
        menuTitle: " Translate: '%s'",
     });
 

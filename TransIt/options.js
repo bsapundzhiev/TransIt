@@ -53,9 +53,21 @@ TransIt.Options.restoreOptions = function() {
    TransIt.Options.populateLang("trgLang", "Transit.trgLang");
 }
 
+TransIt.Options.switchLanguages = async function() {
+  var srcLang = await TransIt.localStore.get("Transit.srcLang"); 
+  if (srcLang != 'auto') {
+    await TransIt.Options.storeRestore("srcLang", "Transit.trgLang");
+    await TransIt.Options.storeRestore("trgLang", "Transit.srcLang");
+    TransIt.Options.saveOptions()
+  } else {
+    alert("Target language could not be auto, change source language first.")
+  }
+}
+
 document.addEventListener('DOMContentLoaded', function() {
   TransIt.Options.restoreOptions();
   document.getElementById("srcLang").addEventListener("change", TransIt.Options.saveOptions , false);
   document.getElementById("trgLang").addEventListener("change", TransIt.Options.saveOptions , false);
+  document.getElementById("langSwitch").addEventListener("click", TransIt.Options.switchLanguages , false);
 });
 
