@@ -136,8 +136,10 @@ TrSettings.prototype.trFormatURL = function(text) {
 
 TrSettings.prototype.getMenuTitle = function() {
 
+    var srcLang = TransIt.GetLangName(this.getSrcLang());
+    var trgLang = TransIt.GetLangName(this.getTrgLang());
     const menuTitleElements = [
-        "[", this.getSrcLang(), ">", this.getTrgLang(), "]", this.opts.menuTitle
+        "[", srcLang, "⇨", trgLang, "]", this.opts.menuTitle
     ];
     return menuTitleElements.join('');
 }
@@ -154,12 +156,13 @@ TrSettings.prototype.load = function(callback)
 }
 
 importScripts("localstore.js");
+importScripts("languages.js");
 
 (function() {
     console.log("Init TransIt...");
     var trSettings = new TrSettings({
        url: "https://translate.google.com/",
-       menuTitle: " Translate: '%s'",
+       menuTitle: ": '%s'",
     });
 
     var trView = new TabTrView(trSettings);

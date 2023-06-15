@@ -135,3 +135,9 @@ TransIt.languages = {
 "Yoruba": "yo",
 "Zulu": "zu"
 };
+
+TransIt.GetLangName = function (lang)
+{
+    var keysArr = Object.keys(TransIt.languages);
+    return keysArr.find(k => TransIt.languages[k] == lang);
+}

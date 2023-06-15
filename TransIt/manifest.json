@@ -1,6 +1,6 @@
 {
   "name": "TransIt",
-  "version": "1.0",
+  "version": "1.0.2",
   "description": "Google translate automation.",
   "background": {
 	"service_worker": "background.js"
@@ -13,7 +13,7 @@
              "48": "icon48.png",
              "128": "icon128.png" },
   "permissions": ["contextMenus", "notifications", "tabs", "storage"],
-  "host_permissions": ["http://*.google.com/"],
+  "host_permissions": ["https://*.google.com/"],
   "options_page": "options.html",
   "manifest_version": 3
 }
