@@ -59,16 +59,30 @@ TabTrView.prototype.remTabId = function (TabId, removeInfo) {
     }
 }
 
-TabTrView.prototype.createTab = function (textToTranslate, createEv, fromTab) {
+TabTrView.prototype.createTab = async function (textToTranslate, createEv, fromTab) {
 
-    var tabId = this.tabsInfo[fromTab.windowId];
+    var windowId = fromTab.windowId;
+    if (fromTab.windowId == chrome.windows.WINDOW_ID_NONE) {
+        windowId = await this.GetCurrentWindowId();
+    }
+    
+    var tabId = this.tabsInfo[windowId];
     var url = this.opts.trFormatURL(textToTranslate);
 
-    if(!tabId) {
+    if (!tabId) {
         chrome.tabs.create( {"url": url }, createEv );
     } else {
         chrome.tabs.update( tabId, {"active": true, "url": url } );
     }
+}
+
+TabTrView.prototype.GetCurrentWindowId = function() {
+    
+    return new Promise((resolve, reject) => {
+        chrome.windows.getCurrent(function(win) {
+            resolve(win.id);
+        });
+    });
 }
 
 function TabTrCtrl(view) {
@@ -102,7 +116,6 @@ TabTrCtrl.prototype.trMessageEv = function(message, sender, sendResponse) {
 TabTrCtrl.prototype.trMenuEv = function(OnClickData, Tab) {
     
     var textToTranslate = OnClickData.selectionText;
-
     this.view_.createTab(textToTranslate, this.trTabAddEv.bind(this), Tab); 
 }
 
