@@ -61,28 +61,29 @@ TabTrView.prototype.remTabId = function (TabId, removeInfo) {
 
 TabTrView.prototype.createTab = async function (textToTranslate, createEv, fromTab) {
 
-    var windowId = fromTab.windowId;
-    if (fromTab.windowId == chrome.windows.WINDOW_ID_NONE) {
-        windowId = await this.GetCurrentWindowId();
-    }
-    
+    var windowId = await this.GetCurrentWindowId(fromTab);
     var tabId = this.tabsInfo[windowId];
     var url = this.opts.trFormatURL(textToTranslate);
 
-    if (!tabId) {
+    if (!tabId || this.opts.getOpenNewTab()) {
         chrome.tabs.create( {"url": url }, createEv );
     } else {
         chrome.tabs.update( tabId, {"active": true, "url": url } );
     }
 }
 
-TabTrView.prototype.GetCurrentWindowId = function() {
-    
-    return new Promise((resolve, reject) => {
-        chrome.windows.getCurrent(function(win) {
-            resolve(win.id);
+TabTrView.prototype.GetCurrentWindowId = function(fromTab) {
+
+    var result = Promise.resolve(fromTab.windowId);
+
+    if (fromTab.windowId == chrome.windows.WINDOW_ID_NONE) {
+        result = new Promise((resolve, reject) => {
+            chrome.windows.getCurrent(function(win) {
+                resolve(win.id);
+            });
         });
-    });
+    } 
+    return result;
 }
 
 function TabTrCtrl(view) {
@@ -108,7 +109,6 @@ TabTrCtrl.prototype.trTabRemEv = function(TabId, removeInfo) {
 }
 
 TabTrCtrl.prototype.trMessageEv = function(message, sender, sendResponse) {
-
     this.view_.settingChanged(message);
     sendResponse({});
 }
@@ -131,11 +131,15 @@ TrSettings.prototype.setSettings = function(settings) {
 }
 
 TrSettings.prototype.getSrcLang = function() {
-    return this.opts.settings.srcLang || this.opts.srcLang;
+    return this.opts.settings.srcLang;
 }
 
 TrSettings.prototype.getTrgLang = function() {
-    return  this.opts.settings.trgLang || this.opts.trgLang;
+    return  this.opts.settings.trgLang
+}
+
+TrSettings.prototype.getOpenNewTab = function() {
+    return this.opts.settings.openNewTab;
 }
 
 TrSettings.prototype.trFormatURL = function(text) {
@@ -159,11 +163,14 @@ TrSettings.prototype.getMenuTitle = function() {
 
 TrSettings.prototype.load = function(callback)
 {
-   if(callback) {
-      var srcPromise = TransIt.localStore.get("Transit.srcLang", "auto");
-      var trgPromise = TransIt.localStore.get("Transit.trgLang", "en");
-      Promise.all([srcPromise, trgPromise]).then( values => { 
-        callback({srcLang: values[0], trgLang: values[1]});
+   if (callback) {
+      var settingsPromises = [
+        TransIt.localStore.get("Transit.srcLang", "auto"), 
+        TransIt.localStore.get("Transit.trgLang", "en"),
+        TransIt.localStore.get("Transit.openNewTab", false)
+      ];
+      Promise.all(settingsPromises).then( values => { 
+        callback({srcLang: values[0], trgLang: values[1], openNewTab: values[2]});
       });
    }
 }

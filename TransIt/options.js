@@ -35,22 +35,36 @@ TransIt.Options.populateLang = function(ComboId, StoreId) {
   TransIt.Options.storeRestore(ComboId, StoreId);
 }
 
+TransIt.Options.storeRestoreCheckBox = async function(checkBoxId, StoreId) {
+  var checked = await TransIt.localStore.get(StoreId);
+  document.getElementById(checkBoxId).checked = checked;
+}
+
+TransIt.Options.storeSaveCheckBox = async function(checkBoxId, StoreId) {
+  var checked = document.getElementById(checkBoxId).checked;
+  TransIt.localStore.set(StoreId, checked);
+}
+
+
 TransIt.Options.notify = async function() {
   chrome.runtime.sendMessage({
     "srcLang": await TransIt.localStore.get("Transit.srcLang"),
-    "trgLang": await TransIt.localStore.get("Transit.trgLang")
+    "trgLang": await TransIt.localStore.get("Transit.trgLang"),
+    "openNewTab": await TransIt.localStore.get("Transit.openNewTab", false)
   });
 }
 
 TransIt.Options.saveOptions = function() {
   TransIt.Options.storeSave("srcLang", "Transit.srcLang");
   TransIt.Options.storeSave("trgLang", "Transit.trgLang");
+  TransIt.Options.storeSaveCheckBox("openNewTab", "Transit.openNewTab");
   TransIt.Options.notify();
 }
 
 TransIt.Options.restoreOptions = function() {
    TransIt.Options.populateLang("srcLang", "Transit.srcLang");
    TransIt.Options.populateLang("trgLang", "Transit.trgLang");
+   TransIt.Options.storeRestoreCheckBox("openNewTab", "Transit.openNewTab");
 }
 
 TransIt.Options.switchLanguages = async function() {
@@ -66,8 +80,9 @@ TransIt.Options.switchLanguages = async function() {
 
 document.addEventListener('DOMContentLoaded', function() {
   TransIt.Options.restoreOptions();
-  document.getElementById("srcLang").addEventListener("change", TransIt.Options.saveOptions , false);
-  document.getElementById("trgLang").addEventListener("change", TransIt.Options.saveOptions , false);
-  document.getElementById("langSwitch").addEventListener("click", TransIt.Options.switchLanguages , false);
+  document.getElementById("srcLang").addEventListener("change", TransIt.Options.saveOptions, false);
+  document.getElementById("trgLang").addEventListener("change", TransIt.Options.saveOptions, false);
+  document.getElementById("langSwitch").addEventListener("click", TransIt.Options.switchLanguages, false);
+  document.getElementById("openNewTab").addEventListener("click", TransIt.Options.saveOptions, false);
 });
 

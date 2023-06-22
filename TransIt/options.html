@@ -4,11 +4,6 @@
   	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.3.1/dist/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
 	<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
 	<title>Transit Options</title>
-	<style type="text/css">
-		input, label {
-    		display:block;
-		}
-	</style>
 </head>
 <script type="text/javascript" src="languages.js"></script>
 <script type="text/javascript" src="localstore.js"></script>
@@ -18,16 +13,25 @@
   <h5>TransIt options</h5>
       <div class="form-group">
           <label for="srcLang">Ttranslate from:</label>
-          <select id="srcLang">
+          <select class="form-control" style="width: 300px;" id="srcLang">
               <option value="auto">Autodetect</option>
           </select>
       </div>
       <div class="form-group">
           <label for="trgLang">Ttranslate to:</label>
-          <select id="trgLang"></select>
+          <select class="form-control" style="width: 300px;" id="trgLang"></select>
       </div>
       <div  class="form-group">
         <input class="btn btn-primary pull-right form-control" type="button" value="Switch languagues" id="langSwitch">  
+      </div>
+      <div  class="form-group">
+        <div class="form-check">
+            <input class="form-check-input" type="checkbox" value="" id="openNewTab">
+            <label class="form-check-label" for="openNewTab">
+                Translate in new tab
+            </label>
+            <small class="form-text text-muted">Always translate selection in new browser tab.</small>
+          </div>
       </div>
 </div>
 </body>
