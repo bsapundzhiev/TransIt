@@ -145,10 +145,8 @@ TrSettings.prototype.getOpenNewTab = function() {
 TrSettings.prototype.trFormatURL = function(text) {
 
     var encodedText = encodeURIComponent(text);
-    const urlEelements = [
-        this.opts.url, "#", this.getSrcLang(), "|", this.getTrgLang(), "|", encodeURI(encodedText)
-    ];
-    return urlEelements.join('');
+    var trUrl = `${this.opts.url}#${this.getSrcLang()}|${this.getTrgLang()}|${encodeURI(encodedText)}`;
+    return trUrl;
 }
 
 TrSettings.prototype.getMenuTitle = function() {
