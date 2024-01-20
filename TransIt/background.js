@@ -2,11 +2,12 @@
 //Author:(C) 2012 Borislav Sapundzhiev
 //License: This file is released under the terms of GPL v2.
 
-function TabTrView(opts) {
+function TabTrView(translators) {
 
     this.menuid = 0;
     this.tabsInfo = {};
-    this.opts = opts;
+    this.translators = translators;
+    this.opts = translators[0];
     this.opts.load(this.settingChanged.bind(this));
 }
 
@@ -39,6 +40,13 @@ TabTrView.prototype.addOnMessageListener = function(notifyEv) {
 }
 
 TabTrView.prototype.settingChanged = function(message) {
+
+    const newTranslator = this.translators.find(
+        (translator) => (translator.opts.name == message.translator));
+    
+    if (newTranslator && this.opts != newTranslator) {
+        this.opts = newTranslator;
+    }
 
     this.opts.setSettings(message);
     if (this.menuid) {
@@ -145,30 +153,31 @@ TrSettings.prototype.getOpenNewTab = function() {
 TrSettings.prototype.trFormatURL = function(text) {
 
     var encodedText = encodeURIComponent(text);
-    var trUrl = `${this.opts.url}#${this.getSrcLang()}|${this.getTrgLang()}|${encodedText}`;
-    return encodeURI(trUrl);
+    var separator = this.opts.separator;
+    var trUrl = `${this.opts.url}#${this.getSrcLang()}${separator}${this.getTrgLang()}${separator}${encodedText}`;
+    return trUrl;
 }
 
 TrSettings.prototype.getMenuTitle = function() {
 
     var srcLang = TransIt.GetLangName(this.getSrcLang());
     var trgLang = TransIt.GetLangName(this.getTrgLang());
-    const menuTitleElements = [
-        "[", srcLang, "⇨", trgLang, "]", this.opts.menuTitle
-    ];
-    return menuTitleElements.join('');
+
+    const menuTitle = `(${this.opts.name})[${srcLang}⇨${trgLang}]${this.opts.menuTitle}`;
+    return menuTitle;
 }
 
 TrSettings.prototype.load = function(callback)
 {
    if (callback) {
       var settingsPromises = [
-        TransIt.localStore.get("Transit.srcLang", "auto"), 
+        TransIt.localStore.get("Transit.srcLang", "en"), 
         TransIt.localStore.get("Transit.trgLang", "en"),
-        TransIt.localStore.get("Transit.openNewTab", false)
+        TransIt.localStore.get("Transit.openNewTab", false),
+        TransIt.localStore.get("Transit.translator", this.opts.name)
       ];
       Promise.all(settingsPromises).then( values => { 
-        callback({srcLang: values[0], trgLang: values[1], openNewTab: values[2]});
+        callback({srcLang: values[0], trgLang: values[1], openNewTab: values[2], translator: values[3]});
       });
    }
 }
@@ -178,12 +187,23 @@ importScripts("languages.js");
 
 (function() {
     console.log("Init TransIt...");
-    var trSettings = new TrSettings({
-       url: "https://translate.google.com/",
-       menuTitle: ": '%s'",
-    });
-
-    var trView = new TabTrView(trSettings);
+    
+    const translators = [
+        new TrSettings({
+            name: "Google",
+            url: "https://translate.google.com/",
+            separator: "|",
+            menuTitle: ": '%s'",
+        }), 
+        new TrSettings({
+            name: "Deepl",   
+            url: "https://www.deepl.com/translator",
+            separator: "/",
+            menuTitle: ": '%s'",
+        })
+    ];
+    
+    var trView = new TabTrView(translators);
     var trCtr = new TabTrCtrl(trView);
 
     trCtr.trInitListeners();

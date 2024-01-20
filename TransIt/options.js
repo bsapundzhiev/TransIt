@@ -7,13 +7,14 @@ TransIt.Options = {};
 
 TransIt.Options.storeSave = function (ComboId, StoreId) {
   var select = document.getElementById(ComboId);
-  var srcLang = select.children[select.selectedIndex].value;
-  TransIt.localStore.set(StoreId, srcLang);
+  var selectValue = select.children[select.selectedIndex].value;
+  TransIt.localStore.set(StoreId, selectValue);
 }
 
 TransIt.Options.storeRestore = async function(ComboId, StoreId) {
   var favorite = await TransIt.localStore.get(StoreId);
   if (!favorite) {
+    TransIt.Options.storeSave(ComboId, StoreId);
     return;
   }
   var select = document.getElementById(ComboId);
@@ -35,6 +36,12 @@ TransIt.Options.populateLang = function(ComboId, StoreId) {
   TransIt.Options.storeRestore(ComboId, StoreId);
 }
 
+TransIt.Options.populateTranslators = function(StoreId) {
+  var combo = document.getElementById("translator");
+  TransIt.translators.forEach((x, i) => combo.add( new Option (x, x), null ));
+  TransIt.Options.storeRestore("translator", StoreId);
+}
+
 TransIt.Options.storeRestoreCheckBox = async function(checkBoxId, StoreId) {
   var checked = await TransIt.localStore.get(StoreId);
   document.getElementById(checkBoxId).checked = checked;
@@ -50,7 +57,8 @@ TransIt.Options.notify = async function() {
   chrome.runtime.sendMessage({
     "srcLang": await TransIt.localStore.get("Transit.srcLang"),
     "trgLang": await TransIt.localStore.get("Transit.trgLang"),
-    "openNewTab": await TransIt.localStore.get("Transit.openNewTab", false)
+    "openNewTab": await TransIt.localStore.get("Transit.openNewTab", false),
+    "translator": await TransIt.localStore.get("Transit.translator")
   });
 }
 
@@ -58,6 +66,7 @@ TransIt.Options.saveOptions = function() {
   TransIt.Options.storeSave("srcLang", "Transit.srcLang");
   TransIt.Options.storeSave("trgLang", "Transit.trgLang");
   TransIt.Options.storeSaveCheckBox("openNewTab", "Transit.openNewTab");
+  TransIt.Options.storeSave("translator","Transit.translator");
   TransIt.Options.notify();
 }
 
@@ -65,6 +74,7 @@ TransIt.Options.restoreOptions = function() {
    TransIt.Options.populateLang("srcLang", "Transit.srcLang");
    TransIt.Options.populateLang("trgLang", "Transit.trgLang");
    TransIt.Options.storeRestoreCheckBox("openNewTab", "Transit.openNewTab");
+   TransIt.Options.populateTranslators("Transit.translator");
 }
 
 TransIt.Options.switchLanguages = async function() {
@@ -84,5 +94,6 @@ document.addEventListener('DOMContentLoaded', function() {
   document.getElementById("trgLang").addEventListener("change", TransIt.Options.saveOptions, false);
   document.getElementById("langSwitch").addEventListener("click", TransIt.Options.switchLanguages, false);
   document.getElementById("openNewTab").addEventListener("click", TransIt.Options.saveOptions, false);
+  document.getElementById("translator").addEventListener("change", TransIt.Options.saveOptions, false);
 });
 
