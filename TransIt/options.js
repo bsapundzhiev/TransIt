@@ -38,7 +38,10 @@ TransIt.Options.populateLang = function(ComboId, StoreId) {
 
 TransIt.Options.populateTranslators = function(StoreId) {
   var combo = document.getElementById("translator");
-  TransIt.translators.forEach((x, i) => combo.add( new Option (x, x), null ));
+  for(var k in TransIt.translators) {
+    var v = TransIt.translators[k];
+    combo.add( new Option (k, v), null );
+  }
   TransIt.Options.storeRestore("translator", StoreId);
 }
 

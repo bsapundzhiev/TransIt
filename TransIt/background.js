@@ -151,6 +151,12 @@ TrSettings.prototype.getOpenNewTab = function() {
 }
 
 TrSettings.prototype.trFormatURL = function(text) {
+    const trUrl = this.opts.search ? 
+        this.trFormatSearchURL(text) : this.trFormatTranslationURL(text) 
+    return trUrl;
+}
+
+TrSettings.prototype.trFormatTranslationURL = function(text) {
 
     var encodedText = encodeURIComponent(text);
     var separator = this.opts.separator;
@@ -158,12 +164,32 @@ TrSettings.prototype.trFormatURL = function(text) {
     return trUrl;
 }
 
+TrSettings.prototype.trFormatSearchURL = function(text) {
+
+    var encodedText = encodeURIComponent(text);
+    var srUrl = this.opts.url.replace("%s", encodedText);
+    return srUrl;
+}
+
 TrSettings.prototype.getMenuTitle = function() {
+    const menuTitle = this.opts.search ? 
+        this.getSearchMenuTitle() : this.getTranslationMenuTitle();
+    return menuTitle;
+}
+
+TrSettings.prototype.getTranslationMenuTitle = function() {
 
     var srcLang = TransIt.GetLangName(this.getSrcLang());
     var trgLang = TransIt.GetLangName(this.getTrgLang());
+    
+    const menuTitle = 
+        `(${this.opts.name})[${srcLang}⇨${trgLang}]${this.opts.menuTitle}`;
+    return menuTitle;
+}
 
-    const menuTitle = `(${this.opts.name})[${srcLang}⇨${trgLang}]${this.opts.menuTitle}`;
+TrSettings.prototype.getSearchMenuTitle = function() {
+    const menuTitle = 
+        `Search ${this.opts.name}${this.opts.menuTitle}`;
     return menuTitle;
 }
 
@@ -199,6 +225,13 @@ importScripts("languages.js");
             name: "Deepl",   
             url: "https://www.deepl.com/translator",
             separator: "/",
+            menuTitle: ": '%s'",
+        }),
+        new TrSettings({
+            //https://en.wikipedia.org/wiki/Help:Searching_from_a_web_browser
+            name: "Wikipedia",
+            search: true,
+            url:"https://en.wikipedia.org/w/index.php?title=Special:Search&search=%s",
             menuTitle: ": '%s'",
         })
     ];
