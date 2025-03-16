@@ -45,6 +45,15 @@ TransIt.Options.populateTranslators = function(StoreId) {
   TransIt.Options.storeRestore("translator", StoreId);
 }
 
+TransIt.Options.populateSearching = function(StoreId) {
+  var combo = document.getElementById("searching");
+  for(var k in TransIt.searching) {
+    var v = TransIt.searching[k];
+    combo.add( new Option (k, v), null );
+  }
+  TransIt.Options.storeRestore("searching", StoreId);
+}
+
 TransIt.Options.storeRestoreCheckBox = async function(checkBoxId, StoreId) {
   var checked = await TransIt.localStore.get(StoreId);
   document.getElementById(checkBoxId).checked = checked;
@@ -61,7 +70,8 @@ TransIt.Options.notify = async function() {
     "srcLang": await TransIt.localStore.get("Transit.srcLang"),
     "trgLang": await TransIt.localStore.get("Transit.trgLang"),
     "openNewTab": await TransIt.localStore.get("Transit.openNewTab", false),
-    "translator": await TransIt.localStore.get("Transit.translator")
+    "translator": await TransIt.localStore.get("Transit.translator"),
+    "searching" : await TransIt.localStore.get("Transit.searching")
   });
 }
 
@@ -70,6 +80,7 @@ TransIt.Options.saveOptions = function() {
   TransIt.Options.storeSave("trgLang", "Transit.trgLang");
   TransIt.Options.storeSaveCheckBox("openNewTab", "Transit.openNewTab");
   TransIt.Options.storeSave("translator","Transit.translator");
+  TransIt.Options.storeSave("searching","Transit.searching");
   TransIt.Options.notify();
 }
 
@@ -78,6 +89,7 @@ TransIt.Options.restoreOptions = function() {
    TransIt.Options.populateLang("trgLang", "Transit.trgLang");
    TransIt.Options.storeRestoreCheckBox("openNewTab", "Transit.openNewTab");
    TransIt.Options.populateTranslators("Transit.translator");
+   TransIt.Options.populateSearching("Transit.searching");
 }
 
 TransIt.Options.switchLanguages = async function() {
@@ -98,5 +110,6 @@ document.addEventListener('DOMContentLoaded', function() {
   document.getElementById("langSwitch").addEventListener("click", TransIt.Options.switchLanguages, false);
   document.getElementById("openNewTab").addEventListener("click", TransIt.Options.saveOptions, false);
   document.getElementById("translator").addEventListener("change", TransIt.Options.saveOptions, false);
+  document.getElementById("searching").addEventListener("change", TransIt.Options.saveOptions, false);
 });
 

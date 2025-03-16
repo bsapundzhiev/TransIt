@@ -4,7 +4,7 @@
 
 function TabTrView(translators) {
 
-    this.menuid = 0;
+    this.menuid = null;
     this.tabsInfo = {};
     this.translators = translators;
     this.opts = translators[0];
@@ -14,14 +14,10 @@ function TabTrView(translators) {
 TabTrView.prototype.createContextMenu = function (onclickEv) {
 
     var title = this.opts.getMenuTitle();
-    
-    if (!this.menuid) {
-        console.log("createContextMenu: ", this.menuid);
-        chrome.contextMenus.removeAll();
-    }
-    
+    var menuId = this.opts.getMenuId();
+
     this.menuid = chrome.contextMenus.create({
-        "id": "transit-tr-command",
+        "id": menuId,
         "title": title, 
         "contexts": ["selection"]
     });
@@ -42,7 +38,7 @@ TabTrView.prototype.addOnMessageListener = function(notifyEv) {
 TabTrView.prototype.settingChanged = function(message) {
 
     const newTranslator = this.translators.find(
-        (translator) => (translator.opts.name == message.translator));
+        (translator) => translator.matchItem(message));
     
     if (newTranslator && this.opts != newTranslator) {
         this.opts = newTranslator;
@@ -67,16 +63,18 @@ TabTrView.prototype.remTabId = function (TabId, removeInfo) {
     }
 }
 
-TabTrView.prototype.createTab = async function (textToTranslate, createEv, fromTab) {
+TabTrView.prototype.createTab = async function (textToTranslate, createEv, fromTab, menuId) {
+    
+    if (menuId == this.opts.getMenuId()) {
+        var windowId = await this.GetCurrentWindowId(fromTab);
+        var tabId = this.tabsInfo[windowId];
+        var url = this.opts.trFormatURL(textToTranslate);
 
-    var windowId = await this.GetCurrentWindowId(fromTab);
-    var tabId = this.tabsInfo[windowId];
-    var url = this.opts.trFormatURL(textToTranslate);
-
-    if (!tabId || this.opts.getOpenNewTab()) {
-        chrome.tabs.create( {"url": url }, createEv );
-    } else {
-        chrome.tabs.update( tabId, {"active": true, "url": url } );
+        if (!tabId || this.opts.getOpenNewTab()) {
+            chrome.tabs.create( {"url": url }, createEv );
+        } else {
+            chrome.tabs.update( tabId, {"active": true, "url": url } );
+        }
     }
 }
 
@@ -124,7 +122,8 @@ TabTrCtrl.prototype.trMessageEv = function(message, sender, sendResponse) {
 TabTrCtrl.prototype.trMenuEv = function(OnClickData, Tab) {
     
     var textToTranslate = OnClickData.selectionText;
-    this.view_.createTab(textToTranslate, this.trTabAddEv.bind(this), Tab); 
+    var menuId = OnClickData.menuItemId;
+    this.view_.createTab(textToTranslate, this.trTabAddEv.bind(this), Tab, menuId); 
 }
 
 function TrSettings(opts) {
@@ -177,13 +176,20 @@ TrSettings.prototype.getMenuTitle = function() {
     return menuTitle;
 }
 
+TrSettings.prototype.getMenuId = function()
+{
+    const menuId = this.opts.search ? 
+        "transit-sr-command" : "transit-tr-command";
+    return menuId;
+}
+
 TrSettings.prototype.getTranslationMenuTitle = function() {
 
     var srcLang = TransIt.GetLangName(this.getSrcLang());
     var trgLang = TransIt.GetLangName(this.getTrgLang());
     
     const menuTitle = 
-        `(${this.opts.name})[${srcLang}⇨${trgLang}]${this.opts.menuTitle}`;
+        `Translate (${this.opts.name})[${srcLang}⇨${trgLang}]${this.opts.menuTitle}`;
     return menuTitle;
 }
 
@@ -193,6 +199,13 @@ TrSettings.prototype.getSearchMenuTitle = function() {
     return menuTitle;
 }
 
+TrSettings.prototype.matchItem = function(message)
+{
+    var result = this.opts.search ?     
+        (this.opts.name == message.searching) : (this.opts.name == message.translator);     
+    return result;
+}
+
 TrSettings.prototype.load = function(callback)
 {
    if (callback) {
@@ -200,10 +213,12 @@ TrSettings.prototype.load = function(callback)
         TransIt.localStore.get("Transit.srcLang", "en"), 
         TransIt.localStore.get("Transit.trgLang", "en"),
         TransIt.localStore.get("Transit.openNewTab", false),
-        TransIt.localStore.get("Transit.translator", this.opts.name)
+        TransIt.localStore.get("Transit.translator", this.opts.name),
+        TransIt.localStore.get("Transit.searching", this.opts.name)
       ];
+
       Promise.all(settingsPromises).then( values => { 
-        callback({srcLang: values[0], trgLang: values[1], openNewTab: values[2], translator: values[3]});
+        callback({srcLang: values[0], trgLang: values[1], openNewTab: values[2], translator: values[3], searching:values[4]});
       });
    }
 }
@@ -212,8 +227,8 @@ importScripts("localstore.js");
 importScripts("languages.js");
 
 (function() {
-    console.log("Init TransIt...");
-    
+
+    console.log("TransIt: Init translators...");
     const translators = [
         new TrSettings({
             name: "Google",
@@ -226,7 +241,11 @@ importScripts("languages.js");
             url: "https://www.deepl.com/translator",
             separator: "/",
             menuTitle: ": '%s'",
-        }),
+        })
+    ];
+
+    console.log("TransIt: Init search...");
+    const searchEng = [
         new TrSettings({
             //https://en.wikipedia.org/wiki/Help:Searching_from_a_web_browser
             name: "Wikipedia",
@@ -236,8 +255,14 @@ importScripts("languages.js");
         })
     ];
     
-    var trView = new TabTrView(translators);
-    var trCtr = new TabTrCtrl(trView);
+    var views = [
+        new TabTrView(translators),
+        new TabTrView(searchEng)
+    ];
 
-    trCtr.trInitListeners();
+    views.forEach(view => {
+        var ctr = new TabTrCtrl(view);
+        ctr.trInitListeners();
+    });
+
 })();

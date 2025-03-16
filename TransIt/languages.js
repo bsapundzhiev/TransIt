@@ -2,7 +2,10 @@ if( typeof( TransIt ) == "undefined" ) TransIt = {};
 
 TransIt.translators = { 
     "Google (Translate)":"Google", 
-    "Deepl (Translate)": "Deepl", 
+    "Deepl (Translate)": "Deepl"
+};
+
+TransIt.searching = { 
     "Wikipedia (Search)": "Wikipedia"
 };
 
