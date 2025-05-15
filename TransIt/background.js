@@ -223,12 +223,17 @@ TrSettings.prototype.load = function(callback)
    }
 }
 
-importScripts("localstore.js");
-importScripts("languages.js");
+if(typeof importScripts == "function")
+{
+    importScripts("localstore.js");
+    importScripts("languages.js");
+}
 
-(function() {
+chrome.runtime.onInstalled.addListener((details) => {
+  if(details.reason !== "install" && details.reason !== "update") return;
 
-    console.log("TransIt: Init translators...");
+    console.log("Init TransIt... reason:", details.reason);
+    
     const translators = [
         new TrSettings({
             name: "Google",
@@ -241,10 +246,10 @@ importScripts("languages.js");
             url: "https://www.deepl.com/translator",
             separator: "/",
             menuTitle: ": '%s'",
+
         })
     ];
 
-    console.log("TransIt: Init search...");
     const searchEng = [
         new TrSettings({
             //https://en.wikipedia.org/wiki/Help:Searching_from_a_web_browser
@@ -254,8 +259,8 @@ importScripts("languages.js");
             menuTitle: ": '%s'",
         })
     ];
-    
-    var views = [
+
+    const views = [
         new TabTrView(translators),
         new TabTrView(searchEng)
     ];
@@ -264,5 +269,5 @@ importScripts("languages.js");
         var ctr = new TabTrCtrl(view);
         ctr.trInitListeners();
     });
+});
 
-})();

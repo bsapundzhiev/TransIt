@@ -1,0 +1,19 @@
+{
+  "name": "TransIt",
+  "version": "1.2.0",
+  "description": "Translate/search automation.",
+  "background": {
+	"scripts": ["background.js", "localstore.js", "languages.js"]
+  },
+  "action": {
+    "default_icon": "icon16.png",
+    "default_popup": "options.html"
+  },
+  "icons": { "16": "icon16.png",
+             "48": "icon48.png",
+             "128": "icon128.png" },
+  "permissions": ["contextMenus", "notifications", "tabs", "storage"],
+  "host_permissions": ["https://*.google.com/"],
+  "options_page": "options.html",
+  "manifest_version": 3
+}
