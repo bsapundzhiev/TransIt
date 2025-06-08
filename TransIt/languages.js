@@ -6,7 +6,8 @@ TransIt.translators = {
 };
 
 TransIt.searching = { 
-    "Wikipedia (Search)": "Wikipedia"
+    "Wikipedia (Search)": "Wikipedia",
+    "Arch wiki(Search)":"ArchWiki"
 };
 
 TransIt.languages = {

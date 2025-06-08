@@ -229,11 +229,8 @@ if(typeof importScripts == "function")
     importScripts("languages.js");
 }
 
-chrome.runtime.onInstalled.addListener((details) => {
-  if(details.reason !== "install" && details.reason !== "update") return;
-
-    console.log("Init TransIt... reason:", details.reason);
-    
+function InitExtension()
+{
     const translators = [
         new TrSettings({
             name: "Google",
@@ -257,6 +254,13 @@ chrome.runtime.onInstalled.addListener((details) => {
             search: true,
             url:"https://en.wikipedia.org/w/index.php?title=Special:Search&search=%s",
             menuTitle: ": '%s'",
+        }),
+        new TrSettings({
+            //https://wiki.archlinux.org/title/Help:Browsing
+            name: "ArchWiki",
+            search: true,
+            url:"https://wiki.archlinux.org/title/Special:Search/%s",
+            menuTitle: ": '%s'",
         })
     ];
 
@@ -264,10 +268,24 @@ chrome.runtime.onInstalled.addListener((details) => {
         new TabTrView(translators),
         new TabTrView(searchEng)
     ];
+    
+    chrome.contextMenus.removeAll();
 
     views.forEach(view => {
         var ctr = new TabTrCtrl(view);
         ctr.trInitListeners();
     });
+}
+
+
+chrome.runtime.onInstalled.addListener((details) => {
+  if(details.reason !== "install" && details.reason !== "update") return;
+    console.log("Init TransIt... reason:", details.reason);
+    InitExtension();
+});
+
+chrome.runtime.onStartup.addListener(() => {
+    console.log("Init TransIt... reason:","onStartup");
+    InitExtension();
 });
 
