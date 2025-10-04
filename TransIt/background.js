@@ -20,6 +20,10 @@ TabTrView.prototype.createContextMenu = function (onclickEv) {
         "id": menuId,
         "title": title, 
         "contexts": ["selection"]
+    	}, function() {
+        	if (chrome.runtime.lastError) {
+            	console.log(chrome.runtime.lastError.message);
+        }
     });
     
     chrome.contextMenus.onClicked.addListener(onclickEv);
@@ -229,48 +233,39 @@ if(typeof importScripts == "function")
     importScripts("languages.js");
 }
 
-function InitExtension()
+async function InitExtension(reason)
 {
+    console.log("Init TransIt... reason:", reason);
+    
     const translators = [
-        new TrSettings({
-            name: "Google",
-            url: "https://translate.google.com/",
-            separator: "|",
-            menuTitle: ": '%s'",
+        new TrSettings({ 
+            name: "Google", url: "https://translate.google.com/", separator: "|", menuTitle: ": '%s'",
         }), 
         new TrSettings({
-            name: "Deepl",   
-            url: "https://www.deepl.com/translator",
-            separator: "/",
-            menuTitle: ": '%s'",
-
+            name: "Deepl", url: "https://www.deepl.com/translator", separator: "/", menuTitle: ": '%s'",
         })
     ];
 
     const searchEng = [
         new TrSettings({
             //https://en.wikipedia.org/wiki/Help:Searching_from_a_web_browser
-            name: "Wikipedia",
-            search: true,
-            url:"https://en.wikipedia.org/w/index.php?title=Special:Search&search=%s",
-            menuTitle: ": '%s'",
+            name: "Wikipedia", search: true, 
+            url:"https://en.wikipedia.org/w/index.php?title=Special:Search&search=%s", menuTitle: ": '%s'",
         }),
         new TrSettings({
             //https://wiki.archlinux.org/title/Help:Browsing
-            name: "ArchWiki",
-            search: true,
-            url:"https://wiki.archlinux.org/title/Special:Search/%s",
-            menuTitle: ": '%s'",
+            name: "ArchWiki", search: true,
+            url:"https://wiki.archlinux.org/title/Special:Search/%s", menuTitle: ": '%s'",
         })
     ];
-
+    
+    await chrome.contextMenus.removeAll();
+    
     const views = [
         new TabTrView(translators),
         new TabTrView(searchEng)
     ];
     
-    chrome.contextMenus.removeAll();
-
     views.forEach(view => {
         var ctr = new TabTrCtrl(view);
         ctr.trInitListeners();
@@ -280,12 +275,10 @@ function InitExtension()
 
 chrome.runtime.onInstalled.addListener((details) => {
   if(details.reason !== "install" && details.reason !== "update") return;
-    console.log("Init TransIt... reason:", details.reason);
-    InitExtension();
+    InitExtension(details.reason);
 });
 
 chrome.runtime.onStartup.addListener(() => {
-    console.log("Init TransIt... reason:","onStartup");
-    InitExtension();
+    InitExtension("onStartup");
 });
 
